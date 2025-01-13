@@ -9,12 +9,12 @@ You can also include images in this folder and reference them in the markdown. E
 
 ## How it works
 
-Explain how your project works
+This takes the inputs from I and IO ports and then adds them and writes back to O port
 
 ## How to test
 
-Explain how to use your project
+Exploring on how to test this by writing the testbench. Should write a proper testbench although
 
 ## External hardware
 
-List external hardware used in your project (e.g. PMOD, LED display, etc), if any
+No external hardware needed
