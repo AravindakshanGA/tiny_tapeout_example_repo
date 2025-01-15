@@ -23,6 +23,7 @@ async def test_gcd_finder(dut):
     await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 5)
+    dut._log.info("Reset DUT Done")
 
     # Set test inputs for two 64-bit numbers
     num_a = 56  # Example 64-bit number (can be replaced with any value)
