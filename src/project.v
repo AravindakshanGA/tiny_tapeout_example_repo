@@ -43,6 +43,7 @@ module tt_um_example (
 //  reg [63:0] OUTPUT = 64'd0;
 
   reg [7:0] REG_UO;
+  reg COMPUTE_FINISHED;
 
   wire [63:0] SUB_OUT;
   wire B_ZERO;
@@ -74,13 +75,14 @@ module tt_um_example (
   always @(posedge clk) begin
     if(rst_n == 1'b0) begin
 		REG_UO <= 8'd0;
+    COMPUTE_FINISHED <= 1'b0;
     end
     else begin
       case(CURR_STATE)
         ST_IDLE_RESET: begin
           INPUT_A <= 64'd0;
           INPUT_B <= 64'd0;
-			 REG_UO <= 8'd0;
+          COMPUTE_FINISHED <= 1'b0;
         end
         // Inputs taken in LSB first manner
         ST_INPUT_A: begin 
@@ -121,8 +123,12 @@ module tt_um_example (
               INPUT_A <= SUB_OUT;
             INPUT_B <= INPUT_A;
           end
+          else begin
+            COMPUTE_FINISHED <= 1'b1;
+          end
         end
         ST_OUTPUT: begin
+			COMPUTE_FINISHED <= 1'b0;
 			 case(IO_COUNTER)
 				3'd0: REG_UO <= INPUT_A [7:0]  ;
 				3'd1: REG_UO <= INPUT_A [15:8] ;
@@ -144,7 +150,7 @@ module tt_um_example (
 
   // All output pins must be assigned. If not used, assign to 0.
   assign uo_out  = REG_UO;  // Example: ou_out is the sum of ui_in and uio_in
-  assign uio_out = 0;
+  assign uio_out = {3'd0, COMPUTE_FINISHED, 4'd0};
   assign uio_oe  = 8'h0F;
 
   // List all unused inputs to prevent warnings

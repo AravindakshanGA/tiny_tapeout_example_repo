@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2024 Tiny Tapeout
+# SPDX-FileCopyrightText: © 2025 AravindakshanGA
 # SPDX-License-Identifier: Apache-2.0
 
 import cocotb
@@ -7,34 +7,64 @@ from cocotb.triggers import ClockCycles
 
 
 @cocotb.test()
-async def test_project(dut):
+async def test_gcd_finder(dut):
     dut._log.info("Start")
 
-    # Set the clock period to 10 us (100 KHz)
+    # Set up the clock with a period of 10 us (100 KHz)
     clock = Clock(dut.clk, 10, units="us")
     cocotb.start_soon(clock.start())
 
-    # Reset
-    dut._log.info("Reset")
-    dut.ena.value = 1
+    # Reset the DUT
+    dut._log.info("Resetting DUT")
+    dut.ena.value = 1  # Enable the design
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
+    await ClockCycles(dut.clk, 5)
 
-    dut._log.info("Test project behavior")
+    # Set test inputs for two 64-bit numbers
+    num_a = 56  # Example 64-bit number (can be replaced with any value)
+    num_b = 98  # Example 64-bit number (can be replaced with any value)
 
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
+    # Loading the first input (INPUT_A) 8 bits at a time
+    dut._log.info("Loading INPUT_A")
+    for i in range(8):
+        dut.ui_in.value = (num_a >> (i * 8)) & 0xFF  # Extract 8-bit chunk
+        await ClockCycles(dut.clk, 1)
 
-    # Wait for one clock cycle to see the output values
+    # Loading the second input (INPUT_B) 8 bits at a time
+    dut._log.info("Loading INPUT_B")
+    for i in range(8):
+        dut.ui_in.value = (num_b >> (i * 8)) & 0xFF  # Extract 8-bit chunk
+        await ClockCycles(dut.clk, 1)
+
+    # Assert the start signal to begin computation
+    dut._log.info("Asserting start signal")
+    dut.uio_in.value = 0b00000001  # Set IO[0] (start signal)
     await ClockCycles(dut.clk, 1)
+    dut.uio_in.value = 0b00000000  # Clear IO[0] after 1 cycle
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    assert dut.uo_out.value == 50
+    # Wait for computation to complete (monitor IO[4] for a ready signal)
+    dut._log.info("Waiting for computation to complete")
+    while dut.uio_out.value & 0b00010000 == 0:  # Wait for IO[4] to go high
+        await ClockCycles(dut.clk, 1)
 
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
+    # Read back the result (OUTPUT) 8 bits at a time
+    gcd_result = 0
+    for i in range(8):
+        gcd_result |= (int(dut.uo_out.value) & 0xFF) << (i * 8)
+        await ClockCycles(dut.clk, 1)
+
+    # Log and assert the result
+    expected_gcd = gcd(num_a, num_b)  # Replace with the actual GCD calculation
+    dut._log.info(f"Computed GCD: {gcd_result}, Expected GCD: {expected_gcd}")
+    assert gcd_result == expected_gcd, f"GCD mismatch: {gcd_result} != {expected_gcd}"
+
+
+def gcd(a, b):
+    """Helper function to calculate the GCD of two numbers."""
+    while b:
+        a, b = b, a % b
+    return a
