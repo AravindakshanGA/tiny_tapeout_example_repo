@@ -8,7 +8,7 @@ from cocotb.triggers import ClockCycles
 
 @cocotb.test()
 async def test_gcd_finder(dut):
-    dut._log.info("Start")
+    dut._log.info("Starting GCD Finder Test")
 
     # Set up the clock with a period of 10 us (100 KHz)
     clock = Clock(dut.clk, 10, units="us")
@@ -34,12 +34,14 @@ async def test_gcd_finder(dut):
     for i in range(8):
         dut.ui_in.value = (num_a >> (i * 8)) & 0xFF  # Extract 8-bit chunk
         await ClockCycles(dut.clk, 1)
+        dut._log.info(f"Loaded INPUT_A[{i}]: {hex((num_a >> (i * 8)) & 0xFF)}")
 
     # Loading the second input (INPUT_B) 8 bits at a time
     dut._log.info("Loading INPUT_B")
     for i in range(8):
         dut.ui_in.value = (num_b >> (i * 8)) & 0xFF  # Extract 8-bit chunk
         await ClockCycles(dut.clk, 1)
+        dut._log.info(f"Loaded INPUT_B[{i}]: {hex((num_b >> (i * 8)) & 0xFF)}")
 
     # Assert the start signal to begin computation
     dut._log.info("Asserting start signal")
@@ -49,19 +51,22 @@ async def test_gcd_finder(dut):
 
     # Wait for computation to complete (monitor IO[4] for a ready signal)
     dut._log.info("Waiting for computation to complete")
-    while dut.uio_out.value & 0b00010000 == 0:  # Wait for IO[4] to go high
+    while (dut.uio_out.value & 0b00010000) == 0:  # Wait for IO[4] to go high
         await ClockCycles(dut.clk, 1)
 
     # Read back the result (OUTPUT) 8 bits at a time
+    dut._log.info("Reading the GCD result")
     gcd_result = 0
     for i in range(8):
-        dut._log.info("GCD Signal Out : " + str(i) + str(int(dut.uo_out.value)))
         gcd_result |= (int(dut.uo_out.value) & 0xFF) << (i * 8)
+        dut._log.info(f"GCD result byte[{i}]: {hex(int(dut.uo_out.value) & 0xFF)}")
         await ClockCycles(dut.clk, 1)
 
-    # Log and assert the result
-    expected_gcd = gcd(num_a, num_b)  # Replace with the actual GCD calculation
+    # Calculate the expected GCD
+    expected_gcd = gcd(num_a, num_b)
     dut._log.info(f"Computed GCD: {gcd_result}, Expected GCD: {expected_gcd}")
+
+    # Assert the result matches the expected value
     assert gcd_result == expected_gcd, f"GCD mismatch: {gcd_result} != {expected_gcd}"
 
 
