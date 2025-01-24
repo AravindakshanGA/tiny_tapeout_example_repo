@@ -55,6 +55,7 @@ async def test_gcd_finder(dut):
     # Read back the result (OUTPUT) 8 bits at a time
     gcd_result = 0
     for i in range(8):
+        dut._log.info("GCD Signal Out : " + str(i) + str(int(dut.uo_out.value)))
         gcd_result |= (int(dut.uo_out.value) & 0xFF) << (i * 8)
         await ClockCycles(dut.clk, 1)
 
