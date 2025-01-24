@@ -29,6 +29,12 @@ async def test_gcd_finder(dut):
     num_a = 56  # Example 64-bit number (can be replaced with any value)
     num_b = 98  # Example 64-bit number (can be replaced with any value)
 
+    # Assert the start signal to begin computation
+    dut._log.info("Asserting start signal")
+    dut.uio_in.value = 0b00000001  # Set IO[0] (start signal)
+    await ClockCycles(dut.clk, 1)
+    dut.uio_in.value = 0b00000000  # Clear IO[0] after 1 cycle
+
     # Loading the first input (INPUT_A) 8 bits at a time
     dut._log.info("Loading INPUT_A")
     for i in range(8):
@@ -42,12 +48,6 @@ async def test_gcd_finder(dut):
         dut.ui_in.value = (num_b >> (i * 8)) & 0xFF  # Extract 8-bit chunk
         await ClockCycles(dut.clk, 1)
         dut._log.info(f"Loaded INPUT_B[{i}]: {hex((num_b >> (i * 8)) & 0xFF)}")
-
-    # Assert the start signal to begin computation
-    dut._log.info("Asserting start signal")
-    dut.uio_in.value = 0b00000001  # Set IO[0] (start signal)
-    await ClockCycles(dut.clk, 1)
-    dut.uio_in.value = 0b00000000  # Clear IO[0] after 1 cycle
 
     # Wait for computation to complete (monitor IO[4] for a ready signal)
     dut._log.info("Waiting for computation to complete")
